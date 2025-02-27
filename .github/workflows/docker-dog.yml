@@ -8,54 +8,58 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Step 1: Checkout the code
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # Step 2: Set up QEMU
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      # Step 3: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Step 4: Login to DockerHub
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAMELAB6 }}
-          password: ${{ secrets.DOCKER_HUB_TOKENLAB06 }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Prepare the docker-compose run
-        run: ls -l
-
-      - name: Build and push Docker image
+      # Step 5: Build and push Docker image
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: kengchayodom/234-deploylab11-06:latest
 
-      - name: Copy docker-compose file via SSH
+
+      # Step 7: Copy docker-compose.yml to server via SSH
+      - name: Copy docker-compose.yml to server via SSH
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.HOST_SERVERLAB06 }}
-          username: ${{ secrets.HOST_USER_NAMELAB06 }}
-          key: ${{ secrets.HOST_SSH_LAB06 }}
-          port: 22
+          host: ${{ secrets.HOST_SERVER }}
+          username: ${{ secrets.HOST_USER_NAME }}
+          key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
           source: "docker-compose.yml"
           target: "/home/ubuntu/frontend"
 
-      - name: Deploy using Docker Compose
+      # Step 8: Deploy Docker Compose
+      - name: Deploy Docker Compose
         uses: appleboy/ssh-action@v1.2.1
         with:
-          host: ${{ secrets.HOST_SERVERLAB06 }}
-          username: ${{ secrets.HOST_USER_NAMELAB06 }}
-          key: ${{ secrets.HOST_SSH_LAB06 }}
+          host: ${{ secrets.HOST_SERVER }}
+          username: ${{ secrets.HOST_USER_NAME }}
+          key: ${{ secrets.HOST_SSH_PRIVATE_KEY }}
           port: 22
           script: |
             cd /home/ubuntu/frontend
-            echo ${{ secrets.DOCKER_HUB_TOKENLAB06 }} | docker login --username ${{ secrets.DOCKER_HUB_USERNAMELAB6 }} --password-stdin
+            echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login --username ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
             docker compose down
             docker compose pull
             docker compose up -d
             rm -rf /home/ubuntu/frontend
-
