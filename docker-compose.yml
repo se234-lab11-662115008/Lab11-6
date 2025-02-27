@@ -1,0 +1,5 @@
+services:
+  web:
+    image: kengchayodom/234-deploylab11-06:latest
+    ports:
+      - "8109:80"
