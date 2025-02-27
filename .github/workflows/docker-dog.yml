@@ -59,19 +59,3 @@ jobs:
             docker compose up -d
             rm -rf /home/ubuntu/frontend
 
-            
-    deepsource:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install DeepSource CLI
-        run: |
-          curl https://deepsource.io/cli | sh
-          chmod +x ./bin/deepsource
-          echo "$HOME/bin" >> $GITHUB_PATH
-
-      - name: Verify Installation
-        run: ./bin/deepsource version
