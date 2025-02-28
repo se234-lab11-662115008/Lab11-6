@@ -1,24 +1,58 @@
-name: DeepSource Scan
+name: DeepSource Test Coverage Analysis
 
 on:
   push:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 jobs:
-  deepsource:
+  test-coverage:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
 
+      # Set up the environment variables
+      - name: Set up DEEPSOURCE_DSN
+        run: echo "DEEPSOURCE_DSN=${{ secrets.DEEPSOURCE_DSN }}" >> $GITHUB_ENV
+
+      # Build the Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t my-docker-image .
+
+      # Run the container in detached mode
+      - name: Run Docker container
+        run: |
+          docker run --rm -d -p 8000:80 my-docker-image
+
+      # Wait for a few seconds to ensure the container is running
+      - name: Wait for server to start
+        run: sleep 5 # เพิ่มเวลารอให้ container ทำงาน
+
+      # Check if the container is running
+      - name: Verify Docker container is running
+        run: |
+          docker ps
+
+      # Generate the coverage report (ปรับตามวิธีทดสอบที่คุณใช้)
+      - name: Run custom tests and generate coverage report
+        run: |
+          curl http://localhost:8000/coverage-report > coverage.xml
+
+      # Install DeepSource CLI
       - name: Install DeepSource CLI
         run: |
-          curl https://deepsource.io/cli | sh
-          chmod +x ./bin/deepsource
-          echo "$HOME/bin" >> $GITHUB_PATH
+          curl -sSL https://deepsource.io/cli | sh
 
-      - name: Verify Installation
-        run: ./bin/deepsource version
+      # Report the coverage artifact to DeepSource
+      - name: Report coverage to DeepSource
+        run: |
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file coverage.xml
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
